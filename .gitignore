@@ -1,0 +1,26 @@
+.DS_Store
+*.log
+node_modules/
+
+# Локальные данные Tor — ключи, cookie, кэш консенсуса. Никогда не коммитить.
+native-host/tor-data/
+
+# Собранные артефакты — их кладём в GitHub Releases, а не в git
+*.xpi
+dist/
+build/
+
+# Рабочие заметки для агента/разработчика — не часть публичного
+# продукта, в репозиторий не идут. Файлы остаются локально на диске.
+STATUS.md
+NEXT_TASK.md
+PLAN.md
+
+# Dev/test-скрипты и файлы, специфичные для машины разработчика —
+# не нужны никому, кроме автора. host.js — неиспользуемый дубликат
+# (реальный native-host — index.js, см. manifest/com.tabvpn.host.json).
+native-host/host.js
+native-host/test-harness.js
+native-host/test-manual.js
+native-host/test-quick-newcircuit.js
+native-host/manifest/com.tabvpn.host.json
