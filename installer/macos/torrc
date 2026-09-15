@@ -1,0 +1,14 @@
+# torrc для TabVPN — минимальный конфиг локального Tor-клиента,
+# запускаемого через launchd (см. com.tabvpn.tor.plist), независимо от
+# браузера.
+#
+# __TABVPN_HOME__ — плейсхолдер: этот файл кладётся как есть в payload
+# .pkg-инсталлятора, а postinstall при установке подставляет реальный
+# домашний каталог пользователя (sed) и кладёт результат в
+# ~/Library/Application Support/TabVPN/torrc. Хардкодить путь здесь
+# нельзя — postinstall выполняется от root, у которого свой HOME.
+
+SocksPort 9050
+ControlPort 9051
+CookieAuthentication 1
+DataDirectory __TABVPN_HOME__/Library/Application Support/TabVPN/tor-data

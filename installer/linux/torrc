@@ -1,0 +1,16 @@
+# torrc для TabVPN — минимальный конфиг локального Tor-клиента,
+# запускаемого через systemd --user unit (см. tabvpn-tor.service в
+# этой же папке), независимо от браузера. Образец —
+# installer/macos/torrc, тот же принцип плейсхолдера.
+#
+# __TABVPN_HOME__ — плейсхолдер: этот файл кладётся как есть в payload
+# .deb-пакета (/opt/tabvpn/share/torrc), а postinst при установке
+# подставляет реальный домашний каталог пользователя (sed) и кладёт
+# результат в ~/.local/share/TabVPN/torrc. Хардкодить путь нельзя —
+# postinst выполняется от root (dpkg -i запускается через sudo), у
+# которого свой HOME.
+
+SocksPort 9050
+ControlPort 9051
+CookieAuthentication 1
+DataDirectory __TABVPN_HOME__/.local/share/TabVPN/tor-data

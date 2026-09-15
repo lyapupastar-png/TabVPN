@@ -1,0 +1,95 @@
+#!/bin/bash
+set -euo pipefail
+
+# postinstall — запускается TabVPN.pkg (Installer.app выполняет его от
+# root, поэтому $HOME/$USER тут — root, а не реальный пользователь;
+# определяем залогиненного пользователя явно через /dev/console).
+#
+# Payload пакета (tor, оба бинаря native-host, torrc, plist) на момент
+# запуска этого скрипта уже установлен в staging-каталог
+# /Library/Application Support/TabVPN-staging (install-location из
+# build-pkg.sh) — раскладываем его отсюда в домашнюю папку
+# пользователя и подставляем реальные пути вместо __TABVPN_HOME__.
+
+STAGING_DIR="/Library/Application Support/TabVPN-staging"
+
+CONSOLE_USER="$(stat -f%Su /dev/console)"
+if [ -z "$CONSOLE_USER" ] || [ "$CONSOLE_USER" = "root" ]; then
+  echo "!! Не удалось определить залогиненного пользователя" >&2
+  exit 1
+fi
+USER_HOME="$(dscl . -read "/Users/${CONSOLE_USER}" NFSHomeDirectory | awk '{print $2}')"
+if [ -z "$USER_HOME" ]; then
+  echo "!! Не удалось определить домашнюю папку пользователя ${CONSOLE_USER}" >&2
+  exit 1
+fi
+echo "==> Пользователь: ${CONSOLE_USER}, дом: ${USER_HOME}"
+
+APP_SUPPORT_DIR="${USER_HOME}/Library/Application Support/TabVPN"
+BIN_DIR="${APP_SUPPORT_DIR}/bin"
+TOR_DATA_DIR="${APP_SUPPORT_DIR}/tor-data"
+LAUNCH_AGENTS_DIR="${USER_HOME}/Library/LaunchAgents"
+NATIVE_MESSAGING_DIR="${USER_HOME}/Library/Application Support/Mozilla/NativeMessagingHosts"
+
+mkdir -p "$BIN_DIR" "$TOR_DATA_DIR" "$LAUNCH_AGENTS_DIR" "$NATIVE_MESSAGING_DIR"
+
+echo "==> Копирую бинарь tor..."
+cp "${STAGING_DIR}/tor" "${BIN_DIR}/tor"
+chmod +x "${BIN_DIR}/tor"
+
+# tor слинкован через @executable_path на свои .dylib — они должны
+# лежать РЯДОМ с tor в BIN_DIR, иначе dyld не найдёт их при запуске.
+echo "==> Копирую зависимости tor (dylib)..."
+shopt -s nullglob
+for dylib in "${STAGING_DIR}"/*.dylib; do
+  cp "$dylib" "${BIN_DIR}/"
+done
+shopt -u nullglob
+
+ARCH="$(uname -m)"
+echo "==> Выбираю нужный бинарь native-host по архитектуре (${ARCH})..."
+if [ "$ARCH" = "arm64" ]; then
+  cp "${STAGING_DIR}/tabvpn-native-host-arm64" "${BIN_DIR}/tabvpn-native-host"
+else
+  cp "${STAGING_DIR}/tabvpn-native-host-x64" "${BIN_DIR}/tabvpn-native-host"
+fi
+chmod +x "${BIN_DIR}/tabvpn-native-host"
+
+# Заменяем __TABVPN_HOME__ на реальный путь. Используем '#' как
+# разделитель в sed, т.к. сам путь содержит '/'; экранируем '&' и '\',
+# у которых спецсмысл в replacement-части sed.
+ESCAPED_HOME="$(printf '%s' "$USER_HOME" | sed 's/[&\]/\\&/g')"
+
+echo "==> Кладу torrc с подставленным домашним каталогом..."
+sed "s#__TABVPN_HOME__#${ESCAPED_HOME}#g" "${STAGING_DIR}/torrc" > "${APP_SUPPORT_DIR}/torrc"
+
+echo "==> Ставлю launchd LaunchAgent..."
+sed "s#__TABVPN_HOME__#${ESCAPED_HOME}#g" "${STAGING_DIR}/com.tabvpn.tor.plist" \
+  > "${LAUNCH_AGENTS_DIR}/com.tabvpn.tor.plist"
+
+echo "==> Генерирую native messaging manifest с правильным путём установки..."
+cat > "${NATIVE_MESSAGING_DIR}/com.tabvpn.host.json" <<EOF
+{
+  "name": "com.tabvpn.host",
+  "description": "TabVPN native messaging host",
+  "path": "${BIN_DIR}/tabvpn-native-host",
+  "type": "stdio",
+  "allowed_extensions": ["tabvpn@local"]
+}
+EOF
+
+echo "==> Меняю владельца всех созданных файлов на ${CONSOLE_USER}..."
+chown -R "${CONSOLE_USER}" "$APP_SUPPORT_DIR" "$NATIVE_MESSAGING_DIR" \
+  "${LAUNCH_AGENTS_DIR}/com.tabvpn.tor.plist"
+
+echo "==> Загружаю LaunchAgent для текущей сессии, если пользователь залогинен..."
+CONSOLE_UID="$(id -u "$CONSOLE_USER")"
+launchctl bootstrap "gui/${CONSOLE_UID}" "${LAUNCH_AGENTS_DIR}/com.tabvpn.tor.plist" 2>/dev/null \
+  || sudo -u "$CONSOLE_USER" launchctl load "${LAUNCH_AGENTS_DIR}/com.tabvpn.tor.plist" 2>/dev/null \
+  || echo "   (не критично — агент подхватится при следующем логине)"
+
+echo "==> Убираю staging-каталог..."
+rm -rf "$STAGING_DIR"
+
+echo "==> postinstall TabVPN завершён."
+exit 0
