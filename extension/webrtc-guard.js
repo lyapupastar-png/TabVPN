@@ -2,28 +2,26 @@
 // чтобы ICE-кандидаты не слили реальный IP в обход Tor-прокси
 // (Задача 5 из PLAN.md). Использует webNavigation + executeScript,
 // поэтому загружается после proxy.js (нужен vpnContainerCookieStoreId).
-
-const WEBRTC_BLOCK_CODE = `
-(function () {
-  function disable(name) {
-    if (!(name in window)) return;
-    try {
-      Object.defineProperty(window, name, {
-        get() {
-          throw new Error('TabVPN: WebRTC отключён в этом контейнере');
-        },
-        configurable: false,
-      });
-    } catch (err) {
-      // свойство уже non-configurable — ничего не делаем
-    }
-  }
-  disable('RTCPeerConnection');
-  disable('webkitRTCPeerConnection');
-  disable('mozRTCPeerConnection');
-  disable('RTCDataChannel');
-})();
-`;
+//
+// История (2026-09-12):
+// 1) Изначально код блокировки выполнялся прямо в теле content
+//    script'а через Object.defineProperty(window, ...). В Firefox
+//    это не работало: content script и страница видят РАЗНЫЕ
+//    версии window (Xray vision), изменения content script'а
+//    невидимы для страницы — WebRTC оставался полностью открыт.
+// 2) Затем код вынесли в отдельный файл и подключали как
+//    <script src="moz-extension://...">, чтобы обойти Xray. Но это
+//    требовало web_accessible_resources — а значит, ЛЮБОЙ сайт мог
+//    зондом проверить наличие этого URL, обнаружить TabVPN и получить
+//    стабильный internal UUID расширения как идентификатор для
+//    слежки, переживающий смену Tor-цепочки (newCircuit). Отдельная
+//    утечка, ничем не лучше исходной.
+// 3) Правильное решение — window.wrappedJSObject: Firefox даёт
+//    content script прямую ссылку на настоящий объект страницы.
+//    Правки через неё сразу видны странице, без вставки <script>,
+//    без CSP-проблем (CSP ограничивает то, что грузит/исполняет
+//    сама страница, а не действия привилегированного content
+//    script) и без единого публичного extension-ресурса.
 
 async function injectWebrtcGuardIfVpnTab(tabId, frameId) {
   let tab;
@@ -35,7 +33,23 @@ async function injectWebrtcGuardIfVpnTab(tabId, frameId) {
   if (tab.cookieStoreId !== vpnContainerCookieStoreId) return;
   try {
     await browser.tabs.executeScript(tabId, {
-      code: WEBRTC_BLOCK_CODE,
+      code: `
+        (function () {
+          const win = window.wrappedJSObject;
+          function disable(name) {
+            if (!(name in win)) return;
+            try {
+              win[name] = undefined;
+            } catch (err) {
+              // свойство не перезаписывается — ничего не делаем
+            }
+          }
+          disable('RTCPeerConnection');
+          disable('webkitRTCPeerConnection');
+          disable('mozRTCPeerConnection');
+          disable('RTCDataChannel');
+        })();
+      `,
       runAt: 'document_start',
       frameId,
     });
@@ -46,5 +60,10 @@ async function injectWebrtcGuardIfVpnTab(tabId, frameId) {
 
 browser.webNavigation.onCommitted.addListener((details) => {
   if (details.frameId !== 0) return; // только top-level фрейм
+  // Пропускаем about:blank и другие служебные страницы, возникающие
+  // при открытии новой вкладки до настоящей навигации — на них
+  // executeScript падает с "Missing host permission for the tab",
+  // это ожидаемо и не является реальной ошибкой.
+  if (!details.url || !/^https?:\/\//.test(details.url)) return;
   injectWebrtcGuardIfVpnTab(details.tabId, details.frameId);
 });

@@ -1,0 +1,12 @@
+{
+  "addons": {
+    "tabvpn@local": {
+      "updates": [
+        {
+          "version": "0.1.2",
+          "update_link": "https://github.com/lyapupastar-png/TabVPN/releases/download/v0.1.2/tabvpn-0.1.2.xpi"
+        }
+      ]
+    }
+  }
+}

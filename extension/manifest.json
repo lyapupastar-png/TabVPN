@@ -1,12 +1,20 @@
 {
   "manifest_version": 2,
   "name": "TabVPN",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Открывает выбранные ссылки в отдельном контейнере через Tor, чтобы обойти geo-блокировку по IP.",
+  "icons": {
+    "16": "icons/earth.svg",
+    "32": "icons/earth.svg",
+    "48": "icons/earth.svg",
+    "96": "icons/earth.svg",
+    "128": "icons/earth.svg"
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "tabvpn@local",
       "strict_min_version": "91.1.0",
+      "update_url": "https://raw.githubusercontent.com/lyapupastar-png/TabVPN/main/updates.json",
       "data_collection_permissions": {
         "required": ["none"]
       }
@@ -20,6 +28,8 @@
     "nativeMessaging",
     "tabs",
     "webNavigation",
+    "webRequest",
+    "webRequestBlocking",
     "<all_urls>"
   ],
   "background": {
@@ -27,6 +37,7 @@
     "persistent": true
   },
   "browser_action": {
-    "default_title": "TabVPN"
+    "default_title": "TabVPN",
+    "default_icon": "icons/earth.svg"
   }
 }
