@@ -7,10 +7,10 @@ function updateBadge() {
   browser.browserAction.setBadgeText({ text: "" });
   if (torStatus.ready) {
     browser.browserAction.setIcon({ path: "icons/earth-ok.svg" });
-    browser.browserAction.setTitle({ title: "TabVPN — Tor готов" });
+    browser.browserAction.setTitle({ title: browser.i18n.getMessage("browserActionTorReady") || "TabVPN — Tor is ready" });
   } else {
     browser.browserAction.setIcon({ path: "icons/earth.svg" });
-    browser.browserAction.setTitle({ title: "TabVPN — Tor запускается" });
+    browser.browserAction.setTitle({ title: browser.i18n.getMessage("browserActionTorStarting") || "TabVPN — Tor is starting" });
   }
 }
 
@@ -23,7 +23,7 @@ function handleNativeMessage(message) {
   } else if (message.type === "error") {
     browser.browserAction.setBadgeText({ text: "" });
     browser.browserAction.setIcon({ path: "icons/earth-err.svg" });
-    browser.browserAction.setTitle({ title: "TabVPN: " + message.message });
+    browser.browserAction.setTitle({ title: browser.i18n.getMessage("browserActionError", [message.message]) || ("TabVPN: " + message.message) });
     console.error("TabVPN native host error:", message.message);
   } else if (message.type === "newCircuitResult") {
     if (!message.ok) {
@@ -140,7 +140,7 @@ function markTabFailed(tabId) {
   browser.browserAction.setIcon({ tabId, path: "icons/earth-err.svg" });
   browser.browserAction.setTitle({
     tabId,
-    title: "TabVPN: не удалось открыть страницу (" + MAX_AUTO_RETRIES + " попыток)",
+    title: browser.i18n.getMessage("browserActionTabFailed", [String(MAX_AUTO_RETRIES)]) || ("TabVPN: failed to load page (" + MAX_AUTO_RETRIES + " attempts)"),
   });
 }
 

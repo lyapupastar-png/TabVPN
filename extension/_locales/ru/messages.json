@@ -1,0 +1,33 @@
+{
+  "extensionName": {
+    "message": "TabVPN"
+  },
+  "extensionDescription": {
+    "message": "Открывает выбранные ссылки в изолированном контейнере через Tor, чтобы обойти гео-блокировку по IP."
+  },
+  "contextMenuOpenWithVPN": {
+    "message": "Открыть с VPN"
+  },
+  "browserActionTorReady": {
+    "message": "TabVPN — Tor готов"
+  },
+  "browserActionTorStarting": {
+    "message": "TabVPN — Tor запускается"
+  },
+  "browserActionError": {
+    "message": "TabVPN: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "browserActionTabFailed": {
+    "message": "TabVPN: не удалось открыть страницу ($ATTEMPTS$ попыток)",
+    "placeholders": {
+      "attempts": {
+        "content": "$1"
+      }
+    }
+  }
+}

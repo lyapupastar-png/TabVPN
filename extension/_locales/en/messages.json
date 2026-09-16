@@ -1,0 +1,33 @@
+{
+  "extensionName": {
+    "message": "TabVPN"
+  },
+  "extensionDescription": {
+    "message": "Opens selected links in an isolated container tab routed through Tor to bypass geo-blocking by IP."
+  },
+  "contextMenuOpenWithVPN": {
+    "message": "Open with VPN"
+  },
+  "browserActionTorReady": {
+    "message": "TabVPN — Tor is ready"
+  },
+  "browserActionTorStarting": {
+    "message": "TabVPN — Tor is starting"
+  },
+  "browserActionError": {
+    "message": "TabVPN: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "browserActionTabFailed": {
+    "message": "TabVPN: failed to load page ($ATTEMPTS$ attempts)",
+    "placeholders": {
+      "attempts": {
+        "content": "$1"
+      }
+    }
+  }
+}

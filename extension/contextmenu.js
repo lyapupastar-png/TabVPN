@@ -3,7 +3,7 @@
 browser.contextMenus.create(
   {
     id: "open-with-vpn",
-    title: "Открыть с VPN",
+    title: browser.i18n.getMessage("contextMenuOpenWithVPN") || "Open with VPN",
     contexts: ["link"],
   },
   () => {
