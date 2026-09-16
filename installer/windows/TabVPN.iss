@@ -16,7 +16,7 @@
 ; SmartScreen покажет предупреждение, пользователь жмёт "Всё равно
 ; выполнить".
 
-#define AppVersion "0.1.2"
+#define AppVersion "0.1.3"
 
 [Setup]
 AppId={{B4E1B4B0-8C6F-4B4B-9A2E-TABVPNWIN001}
