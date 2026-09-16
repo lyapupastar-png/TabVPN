@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+# postrm — очистка per-user файлов, которые postinst создавал ВНЕ
+# /opt/tabvpn (в домашней папке пользователя) — dpkg сам их не
+# удаляет при "apt remove"/"dpkg -r", т.к. они не в списке файлов
+# пакета. То же ограничение, что и на macOS: удаление .pkg не
+# подчищает ~/Library/Application Support автоматически. См.
+# CurUninstallStepChanged в installer/windows/TabVPN.iss — тот же
+# принцип на Windows (там это делает сам инсталлятор через Inno
+# Setup API, здесь — postrm).
+#
+# Данные Tor (~/.local/share/TabVPN, включая tor-data/ с ключами) —
+# сознательно НЕ удаляются даже при purge, чтобы не терять состояние
+# молча; пользователь при желании удаляет вручную.
+
+if [ "$1" != "remove" ] && [ "$1" != "purge" ]; then
+  exit 0
+fi
+
+REAL_USER="${SUDO_USER:-}"
+if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
+  REAL_USER="$(logname 2>/dev/null || true)"
+fi
+if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
+  exit 0
+fi
+
+USER_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+if [ -z "$USER_HOME" ]; then
+  exit 0
+fi
+
+REAL_UID="$(id -u "$REAL_USER" 2>/dev/null || true)"
+if command -v systemctl >/dev/null 2>&1 && [ -n "$REAL_UID" ]; then
+  sudo -u "$REAL_USER" XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+    systemctl --user disable --now tabvpn-tor.service 2>/dev/null || true
+fi
+
+rm -f "${USER_HOME}/.config/systemd/user/tabvpn-tor.service"
+rm -f "${USER_HOME}/.mozilla/native-messaging-hosts/com.tabvpn.host.json"
+
+echo "==> TabVPN: юнит Tor и native-messaging manifest удалены."
+echo "   Данные Tor (${USER_HOME}/.local/share/TabVPN) оставлены нетронутыми — удали вручную при необходимости."
+
+exit 0

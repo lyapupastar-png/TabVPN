@@ -1,0 +1,27 @@
+# tabvpn-tor.service — systemd --user unit, автозапуск локального
+# Tor-клиента при входе пользователя в систему, независимо от
+# браузера. Прямой аналог com.tabvpn.tor.plist (launchd LaunchAgent)
+# на macOS — см. PLAN-CROSSPLATFORM.md, Задача 7 (решение: systemd
+# --user, а не XDG autostart — Restart=on-failure ниже даёт
+# перезапуск при падении, как KeepAlive в launchd-варианте).
+#
+# Бинарь tor лежит по фиксированному системному пути
+# (/opt/tabvpn/bin/tor, ставится самим .deb-пакетом) — этот путь
+# известен уже на момент сборки пакета, подставлять через sed не
+# нужно. __TABVPN_HOME__ — плейсхолдер только для домашней папки
+# пользователя (torrc, per-user), подставляется postinst-скриптом,
+# как и в torrc рядом.
+
+[Unit]
+Description=TabVPN local Tor client
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/tabvpn/bin/tor -f __TABVPN_HOME__/.local/share/TabVPN/torrc
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

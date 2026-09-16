@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.tabvpn.tor.plist — launchd LaunchAgent, автозапуск локального
+  Tor-клиента при логине пользователя, независимо от браузера.
+
+  __TABVPN_HOME__ — плейсхолдер, подставляется postinstall-скриптом
+  инсталлятора (см. installer/macos/postinstall) в реальный домашний
+  каталог пользователя при установке.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tabvpn.tor</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__TABVPN_HOME__/Library/Application Support/TabVPN/bin/tor</string>
+        <string>-f</string>
+        <string>__TABVPN_HOME__/Library/Application Support/TabVPN/torrc</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>StandardOutPath</key>
+    <string>__TABVPN_HOME__/Library/Application Support/TabVPN/tor-data/tor.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>__TABVPN_HOME__/Library/Application Support/TabVPN/tor-data/tor.stderr.log</string>
+</dict>
+</plist>

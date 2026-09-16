@@ -1,0 +1,96 @@
+#!/bin/bash
+set -e
+
+# postinst — запускается dpkg сразу после того, как статические файлы
+# TabVPN (/opt/tabvpn/bin/{tor,tabvpn-native-host},
+# /opt/tabvpn/share/{torrc,tabvpn-tor.service}) уже установлены
+# системно (см. installer/linux/build-deb.sh). Здесь делается то же,
+# что macOS postinstall и Windows TabVPN.iss [Code]: per-user
+# настройка (torrc, systemd-юнит, native-messaging manifest) — эти
+# файлы должны лежать в ДОМАШНЕЙ папке реального пользователя, а не
+# root'а, от имени которого выполняется dpkg -i / apt install.
+#
+# НЕ было реально запущено 'sudo dpkg -i' на настоящем Debian/Ubuntu
+# на момент написания (см. NEXT_TASK.md, Задача 12 плана) — проверено
+# только 'bash -n' (синтаксис) и сборкой .deb через dpkg-deb на macOS.
+
+TEMPLATE_DIR="/opt/tabvpn/share"
+
+# Определяем реального пользователя, запустившего установку через
+# sudo. dpkg/apt не стирают SUDO_USER из окружения maintainer-скриптов
+# (в отличие от большинства переменных) — стандартный приём для
+# per-user постинсталл-логики в .deb-пакетах; logname — запасной
+# вариант, если SUDO_USER почему-то пуст (напр. установка через pkexec).
+REAL_USER="${SUDO_USER:-}"
+if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
+  REAL_USER="$(logname 2>/dev/null || true)"
+fi
+
+if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
+  echo "!! Не удалось определить реального пользователя (SUDO_USER/logname пусты) — пропускаю per-user настройку." >&2
+  echo "   Ставь TabVPN через 'sudo dpkg -i'/'sudo apt install ./tabvpn.deb' из-под обычного" >&2
+  echo "   пользователя (не из-под root напрямую) — иначе автозапуск Tor и native-messaging" >&2
+  echo "   manifest нужно будет настроить вручную (см. README установки)." >&2
+  exit 0
+fi
+
+USER_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+if [ -z "$USER_HOME" ] || [ ! -d "$USER_HOME" ]; then
+  echo "!! Не нашёл домашнюю папку пользователя ${REAL_USER} — пропускаю per-user настройку." >&2
+  exit 0
+fi
+echo "==> Пользователь: ${REAL_USER}, дом: ${USER_HOME}"
+
+APP_DATA_DIR="${USER_HOME}/.local/share/TabVPN"
+TOR_DATA_DIR="${APP_DATA_DIR}/tor-data"
+SYSTEMD_USER_DIR="${USER_HOME}/.config/systemd/user"
+NATIVE_MESSAGING_DIR="${USER_HOME}/.mozilla/native-messaging-hosts"
+
+mkdir -p "$TOR_DATA_DIR" "$SYSTEMD_USER_DIR" "$NATIVE_MESSAGING_DIR"
+
+# '#' как разделитель в sed (путь содержит '/'), экранируем '&' и '\'
+# у которых спецсмысл в replacement-части — тот же приём, что в
+# macOS postinstall.
+ESCAPED_HOME="$(printf '%s' "$USER_HOME" | sed 's/[&\]/\\&/g')"
+
+echo "==> Кладу torrc с подставленным домашним каталогом..."
+sed "s#__TABVPN_HOME__#${ESCAPED_HOME}#g" "${TEMPLATE_DIR}/torrc" > "${APP_DATA_DIR}/torrc"
+
+echo "==> Ставлю systemd --user unit..."
+sed "s#__TABVPN_HOME__#${ESCAPED_HOME}#g" "${TEMPLATE_DIR}/tabvpn-tor.service" \
+  > "${SYSTEMD_USER_DIR}/tabvpn-tor.service"
+
+echo "==> Генерирую native messaging manifest..."
+cat > "${NATIVE_MESSAGING_DIR}/com.tabvpn.host.json" <<EOF
+{
+  "name": "com.tabvpn.host",
+  "description": "TabVPN native messaging host",
+  "path": "/opt/tabvpn/bin/tabvpn-native-host",
+  "type": "stdio",
+  "allowed_extensions": ["tabvpn@local"]
+}
+EOF
+
+echo "==> Меняю владельца созданных файлов на ${REAL_USER}..."
+chown -R "${REAL_USER}:${REAL_USER}" "$APP_DATA_DIR" "$NATIVE_MESSAGING_DIR" \
+  "${SYSTEMD_USER_DIR}/tabvpn-tor.service" 2>/dev/null \
+  || chown -R "${REAL_USER}" "$APP_DATA_DIR" "$NATIVE_MESSAGING_DIR" \
+       "${SYSTEMD_USER_DIR}/tabvpn-tor.service"
+
+echo "==> Включаю и запускаю systemd --user юнит для ${REAL_USER}..."
+REAL_UID="$(id -u "$REAL_USER" 2>/dev/null || true)"
+if command -v systemctl >/dev/null 2>&1 && [ -n "$REAL_UID" ]; then
+  # postinst выполняется от root — действие должно быть в пользовательской
+  # сессии, поэтому явно прокидываем XDG_RUNTIME_DIR через sudo -u (тот
+  # же принцип, что 'sudo -u "$CONSOLE_USER" launchctl' в macOS postinstall).
+  sudo -u "$REAL_USER" XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+    systemctl --user daemon-reload 2>/dev/null || true
+  sudo -u "$REAL_USER" XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+    systemctl --user enable --now tabvpn-tor.service 2>/dev/null \
+    || echo "   (не критично — юнит подхватится при следующем входе ${REAL_USER} в систему; для автозапуска БЕЗ активной сессии можно дополнительно выполнить 'sudo loginctl enable-linger ${REAL_USER}')"
+else
+  echo "!! systemd не найден в PATH — автозапуск Tor нужно настроить вручную (см. STATUS.md, Открытый вопрос 3.5)." >&2
+fi
+
+echo "==> postinst TabVPN завершён."
+exit 0
