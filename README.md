@@ -7,6 +7,23 @@ browser, TabVPN adds an "Open with VPN" item to the right-click
 menu that opens the link through a VPN route immediately, without
 touching any other tabs.
 
+## Installation
+
+Download the latest release for your OS from the
+[Releases page](https://github.com/lyapupastar-png/TabVPN/releases):
+
+- **macOS** — `TabVPN-*.pkg`
+- **Windows** — `TabVPN-*-windows-setup.exe`
+- **Linux (Debian/Ubuntu)** — `tabvpn-*-linux-amd64.deb`
+
+The installer sets up the local Tor client and the native messaging
+host that the extension talks to. Then add the extension itself in
+Firefox from the same release (`tabvpn-*.xpi`) via `about:addons` →
+the gear icon → "Install Add-on From File...". Firefox only accepts
+`.xpi` files signed by Mozilla; an unsigned build is a preview
+release for testing and requires Firefox Developer Edition/Nightly
+with signature enforcement disabled.
+
 ## The problem
 
 Copying a link into another browser, or toggling a VPN on and off

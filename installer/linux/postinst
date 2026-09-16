@@ -9,10 +9,6 @@ set -e
 # настройка (torrc, systemd-юнит, native-messaging manifest) — эти
 # файлы должны лежать в ДОМАШНЕЙ папке реального пользователя, а не
 # root'а, от имени которого выполняется dpkg -i / apt install.
-#
-# НЕ было реально запущено 'sudo dpkg -i' на настоящем Debian/Ubuntu
-# на момент написания (см. NEXT_TASK.md, Задача 12 плана) — проверено
-# только 'bash -n' (синтаксис) и сборкой .deb через dpkg-deb на macOS.
 
 TEMPLATE_DIR="/opt/tabvpn/share"
 
@@ -30,7 +26,7 @@ if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
   echo "!! Не удалось определить реального пользователя (SUDO_USER/logname пусты) — пропускаю per-user настройку." >&2
   echo "   Ставь TabVPN через 'sudo dpkg -i'/'sudo apt install ./tabvpn.deb' из-под обычного" >&2
   echo "   пользователя (не из-под root напрямую) — иначе автозапуск Tor и native-messaging" >&2
-  echo "   manifest нужно будет настроить вручную (см. README установки)." >&2
+  echo "   manifest нужно будет настроить вручную." >&2
   exit 0
 fi
 
@@ -89,7 +85,7 @@ if command -v systemctl >/dev/null 2>&1 && [ -n "$REAL_UID" ]; then
     systemctl --user enable --now tabvpn-tor.service 2>/dev/null \
     || echo "   (не критично — юнит подхватится при следующем входе ${REAL_USER} в систему; для автозапуска БЕЗ активной сессии можно дополнительно выполнить 'sudo loginctl enable-linger ${REAL_USER}')"
 else
-  echo "!! systemd не найден в PATH — автозапуск Tor нужно настроить вручную (см. STATUS.md, Открытый вопрос 3.5)." >&2
+  echo "!! systemd не найден в PATH — автозапуск Tor нужно настроить вручную." >&2
 fi
 
 echo "==> postinst TabVPN завершён."

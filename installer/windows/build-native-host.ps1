@@ -1,22 +1,16 @@
 # build-native-host.ps1 — компилирует native-host/index.js в отдельный
-# бинарь под Windows x64 через Node.js SEA + postject. См.
-# PLAN-CROSSPLATFORM.md, Задача 4; образец —
+# бинарь под Windows x64 через Node.js SEA + postject. По образцу
 # installer/macos/build-native-host.sh.
 #
-# Написан и впервые прогнан не на Windows, а на macOS через
-# PowerShell 7 (pwsh) — рабочий кроссплатформенный интерпретатор,
-# см. NEXT_TASK.md. Тот же принцип, что для installer/linux/
-# build-native-host.sh: postject не исполняет файл, в который
-# внедряет blob (только редактирует секции PE), поэтому хост сборки
-# не обязан быть Windows — официальный node-v$Version-win-x64.zip
-# скачивается с nodejs.org напрямую и инъекция делается на любой ОС.
-# На реальном windows-latest CI-раннере (Задача 11) этот же скрипт
-# должен отработать идентично (используется тот же кроссплатформенный
-# API — Invoke-WebRequest/Expand-Archive/tar — ничего Windows-
-# специфичного, требующего именно Windows, здесь нет).
+# Скрипт кроссплатформенный: PowerShell 7 (pwsh) работает и на macOS/
+# Linux. Тот же принцип, что для installer/linux/build-native-host.sh:
+# postject не исполняет файл, в который внедряет blob (только
+# редактирует секции PE), поэтому хост сборки не обязан быть Windows —
+# официальный node-v$Version-win-x64.zip скачивается с nodejs.org
+# напрямую и инъекция делается на любой ОС.
 #
 # В отличие от macOS Gatekeeper — PE-файл НЕ требует подписи для
-# локального запуска, шаг codesign не нужен (см. Задачу 4 плана).
+# локального запуска, шаг codesign не нужен.
 #
 # Использование: .\build-native-host.ps1 [-OutDir build] [-Arch x64]
 

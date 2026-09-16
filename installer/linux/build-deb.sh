@@ -2,25 +2,20 @@
 set -euo pipefail
 
 # build-deb.sh — собирает TabVPN.deb из бинарей (build/) + шаблонов
-# torrc/systemd-unit и postinst/postrm-скриптов из этой папки. См.
-# PLAN-CROSSPLATFORM.md, Задача 10 (вариант A — .deb с sudo, решение
-# принято владельцем проекта 2026-09-13, см. NEXT_TASK.md). По образцу
-# installer/macos/build-pkg.sh, адаптировано под dpkg вместо
+# torrc/systemd-unit и postinst/postrm-скриптов из этой папки. По
+# образцу installer/macos/build-pkg.sh, адаптировано под dpkg вместо
 # pkgbuild/productbuild.
 #
-# dpkg-deb НЕ требует Linux для СБОРКИ пакета — тот же принцип, что уже
-# сработал для кросс-ОС сборки native-host бинарей (см.
-# installer/linux/build-native-host.sh): .deb — это просто ar-архив
-# (control.tar.* + data.tar.*), dpkg-deb доступен на macOS через
-# 'brew install dpkg'. УСТАНОВКА пакета (dpkg -i) естественно требует
-# реальный Debian/Ubuntu — собранный .deb НЕ был протестирован реальной
-# установкой на момент написания (см. Задачу 12 плана).
+# dpkg-deb не требует Linux для сборки пакета: .deb — это просто
+# ar-архив (control.tar.* + data.tar.*), dpkg-deb доступен на macOS
+# через 'brew install dpkg'. Установка пакета (dpkg -i) естественно
+# требует реальный Debian/Ubuntu.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BUILD_DIR="${PROJECT_ROOT}/build"
 
-VERSION="${TABVPN_VERSION:-0.1.1}"
+VERSION="${TABVPN_VERSION:-0.1.2}"
 ARCH="amd64"
 PKG_NAME="tabvpn"
 
@@ -118,6 +113,5 @@ echo "---"
 dpkg-deb --contents "$OUT_DEB"
 
 echo "==> Готово: ${OUT_DEB}"
-echo "!! Собран (валидный .deb, dpkg-deb это подтвердил), но НЕ УСТАНАВЛИВАЛСЯ на реальном" >&2
-echo "   Debian/Ubuntu — критерий готовности Задачи 10 (реальная установка, Tor поднят," >&2
-echo "   расширение видит native host) остаётся открытым до Задачи 12 (см. NEXT_TASK.md)." >&2
+echo "!! Пакет собран и провалидирован dpkg-deb, но реальная установка на" >&2
+echo "   Debian/Ubuntu (dpkg -i) вручную не проверялась — проверь перед раздачей." >&2

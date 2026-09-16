@@ -24,14 +24,13 @@ const CONTROL_HOST = '127.0.0.1';
 const LOG_PATH = path.join(__dirname, 'host.log');
 
 // Cookie может лежать в разных местах в зависимости от ОС и от
-// того, как поставлен Tor. См. PLAN-CROSSPLATFORM.md (Задача 1) —
-// этот блок реализует её.
+// того, как поставлен Tor — этот блок перебирает кандидатов.
 //
 // - macOS: через инсталлятор TabVPN (свой bundled Tor, без
 //   Homebrew) или через brew (Intel-путь /usr/local, Apple
 //   Silicon-путь /opt/homebrew).
 // - Windows: инсталлятор TabVPN кладёт свой Tor в
-//   %LOCALAPPDATA%\TabVPN\tor-data (см. Задачи 6, 9 плана).
+//   %LOCALAPPDATA%\TabVPN\tor-data.
 // - Linux: инсталлятор TabVPN кладёт свой Tor в
 //   ~/.local/share/TabVPN/tor-data (XDG data dir), плюс запасной
 //   путь системного пакета tor (Debian/Ubuntu и др.), если

@@ -5,9 +5,9 @@ set -euo pipefail
 # fetch-tor.sh и build-native-host.sh (лежат в build/), плюс шаблонов
 # torrc/plist и postinstall-скрипта из этой же папки.
 #
-# Без подписи Apple Developer ID (осознанное решение, см. NEXT_TASK.md)
-# — .pkg будет блокироваться Gatekeeper при первом запуске, пользователь
-# один раз нажимает "Открыть всё равно".
+# Без подписи Apple Developer ID — .pkg будет блокироваться
+# Gatekeeper при первом запуске, пользователь один раз нажимает
+# "Открыть всё равно".
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"

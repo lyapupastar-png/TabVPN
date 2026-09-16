@@ -1,26 +1,20 @@
-; TabVPN.iss — инсталлятор для Windows (Inno Setup). См.
-; PLAN-CROSSPLATFORM.md, Задача 9. По образцу installer/macos/
-; build-pkg.sh + postinstall, но одним файлом (Inno Setup — Pascal
-; Script вместо отдельного shell-скрипта).
+; TabVPN.iss — инсталлятор для Windows (Inno Setup).
 ;
-; Собирается компилятором ISCC.exe (часть Inno Setup,
-; https://jrsoftware.org/isinfo.php, бесплатный). Требует реальную
-; Windows или Wine — на macOS этой сессией не компилировался, только
-; написан. Собери на своём Windows-ноутбуке:
+; Сборка компилятором ISCC.exe (часть Inno Setup,
+; https://jrsoftware.org/isinfo.php):
 ;   1. Поставь Inno Setup (jrsoftware.org)
 ;   2. Открой этот файл в Inno Setup Compiler и нажми Compile,
 ;      или из cmd: "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" TabVPN.iss
 ;   3. Результат — installer\windows\Output\TabVPN-Setup.exe
 ;
-; PrivilegesRequired=lowest — установка per-user, БЕЗ admin/UAC.
-; Task Scheduler позволяет создавать задачи в контексте текущего
-; пользователя без повышения прав (/rl limited) — тот же принцип,
-; что launchd LaunchAgent на macOS (не системный LaunchDaemon).
+; PrivilegesRequired=lowest — установка per-user, без admin/UAC.
+; Task Scheduler запускает Tor в контексте текущего пользователя без
+; повышения прав (/rl limited) — аналог LaunchAgent на macOS (а не
+; системного LaunchDaemon).
 ;
-; Без code-signing сертификата (осознанное решение, см. NEXT_TASK.md
-; и PLAN-CROSSPLATFORM.md Задача 4) — Windows SmartScreen покажет
-; предупреждение при первом запуске, пользователь жмёт "Всё равно
-; выполнить". Ожидаемо, не устраняется бесплатными средствами.
+; Без code-signing сертификата — при первом запуске Windows
+; SmartScreen покажет предупреждение, пользователь жмёт "Всё равно
+; выполнить".
 
 #define AppVersion "0.1.2"
 
@@ -97,9 +91,8 @@ var
   TaskCmd: String;
 begin
   // Task Scheduler, контекст текущего пользователя, без admin —
-  // прямой аналог launchd LaunchAgent на macOS (см. PLAN-CROSSPLATFORM.md,
-  // Задача 6). /rl limited — обычные права, /f — перезаписать, если
-  // задача от предыдущей установки уже есть.
+  // аналог LaunchAgent на macOS. /rl limited — обычные права, /f —
+  // перезаписать, если задача от предыдущей установки уже есть.
   TaskCmd := Format('/create /tn "TabVPN Tor" /tr "\"%s\" -f \"%s\"" /sc onlogon /rl limited /f', [TorExePath, TorrcPath]);
   Exec(ExpandConstant('{sys}\schtasks.exe'), TaskCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   if ResultCode <> 0 then

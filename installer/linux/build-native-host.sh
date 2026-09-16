@@ -2,8 +2,7 @@
 set -euo pipefail
 
 # build-native-host.sh — компилирует native-host/index.js в отдельный
-# бинарь под Linux x86_64 через Node.js SEA + postject. См.
-# PLAN-CROSSPLATFORM.md, Задача 5; образец —
+# бинарь под Linux x86_64 через Node.js SEA + postject. По образцу
 # installer/macos/build-native-host.sh.
 #
 # ОТЛИЧИЕ ОТ macOS-СКРИПТА: там системный node — universal (fat)

@@ -93,12 +93,10 @@ browser.proxy.onRequest.addListener(handleProxyRequest, { urls: ["<all_urls>"] }
 const TOR_BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; rv:128.0) Gecko/20100101 Firefox/128.0";
 const TOR_BROWSER_ACCEPT_LANGUAGE = "en-US,en;q=0.5";
 
-// ТЕСТ (2026-09-15): старая рабочая версия TabVPN не имитировала Tor
-// Browser вообще. Гипотеза: сама имитация триггерит у Cloudflare
-// более жёсткий Tor-специфичный сценарий проверки (PAT), который
-// настоящий Tor Browser проходит, а обычный Firefox — нет. Флаг ниже
-// выключает имитацию целиком (заголовки + navigator override) для
-// практической проверки на hdrezka.tv.
+// Гипотеза: имитация Tor Browser триггерит у Cloudflare более жёсткий
+// Tor-специфичный сценарий проверки (PAT), который настоящий Tor
+// Browser проходит, а обычный Firefox — нет. Флаг ниже выключает
+// имитацию целиком (заголовки + navigator override).
 const IMPERSONATE_TOR_BROWSER = false;
 
 function handleVpnHeaders(details) {
@@ -123,8 +121,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 // заголовках. Свойства navigator.userAgent/platform/language,
 // видимые самой странице через JS, остаются настоящими (реальная
 // ОС/версия Firefox пользователя) — рассинхрон HTTP-заголовка и
-// JS-значения сам по себе частый сигнал для антибот-систем, отдельно
-// от Alt-Svc/onion-гипотезы (см. NEXT_TASK.md, 2026-09-14). Чиним
+// JS-значения сам по себе частый сигнал для антибот-систем. Чиним
 // через инъекцию <script> в мир страницы (tabs.executeScript выполняет
 // код в изолированном мире контент-скрипта, а не в мире страницы —
 // поэтому оборачиваем в создание script-тега, а не просто в code).
@@ -166,24 +163,20 @@ function injectVpnFingerprintOverride(tabId) {
     .catch(() => {});
 }
 
-// Гипотеза 2026-09-14 (четвёртый проход капчи, см. NEXT_TASK.md):
-// диагностика в background.js поймала "Alternate Service Mapping
-// found ... onion" в логе Firefox — Cloudflare отдаёт Alt-Svc на
-// .onion-зеркало сайта клиентам, похожим на Tor Browser (наш
-// TOR_BROWSER_UA выше как раз таким и притворяется). Настоящий Tor
-// Browser умеет опознавать и корректно обслуживать переход на
-// .onion через собственный Tor-стек; обычный Firefox с внешним
-// SOCKS-Tor такого не умеет — похоже, именно попытка Firefox
-// самостоятельно (opportunistically) поднять .onion-альтернативу
-// после клика по капче и даёт видимость "капча появилась again"
-// (на деле — новый, ещё не пройденный челлендж на .onion-версии
-// сайта, а не повтор того же). Подтверждено пользователем отдельно:
-// настоящий Tor Browser грузит hdrezka.tv без капчи вообще (и на
-// Mac, и на Win) — значит дело не в Tor-сети и не в бане exit-узла,
-// а именно в разнице поведения TabVPN vs настоящего Tor Browser.
+// Cloudflare отдаёт Alt-Svc на .onion-зеркало сайта клиентам, похожим
+// на Tor Browser (наш TOR_BROWSER_UA выше как раз таким и
+// притворяется). Настоящий Tor Browser умеет опознавать и корректно
+// обслуживать переход на .onion через собственный Tor-стек; обычный
+// Firefox с внешним SOCKS-Tor такого не умеет — похоже, именно
+// попытка Firefox самостоятельно (opportunistically) поднять
+// .onion-альтернативу после клика по капче и даёт видимость "капча
+// появилась again" (на деле — новый, ещё не пройденный челлендж на
+// .onion-версии сайта, а не повтор того же). Настоящий Tor Browser
+// грузит такие сайты без капчи вообще — значит дело не в Tor-сети и
+// не в бане exit-узла, а именно в разнице поведения TabVPN vs
+// настоящего Tor Browser.
 // Вырезаем Alt-Svc/Onion-Location из ответов для VPN-контейнера,
-// чтобы Firefox даже не пытался на них реагировать. НЕ ПРОВЕРЕНО
-// ПРАКТИЧЕСКИ — это тест гипотезы, не подтверждённый фикс.
+// чтобы Firefox даже не пытался на них реагировать.
 function handleVpnResponseHeaders(details) {
   if (details.cookieStoreId !== vpnContainerCookieStoreId) return {};
   const headers = details.responseHeaders.filter((h) => {

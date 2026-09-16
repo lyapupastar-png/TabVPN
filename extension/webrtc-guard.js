@@ -1,9 +1,9 @@
 // webrtc-guard.js — блокирует WebRTC на вкладках VPN-контейнера,
-// чтобы ICE-кандидаты не слили реальный IP в обход Tor-прокси
-// (Задача 5 из PLAN.md). Использует webNavigation + executeScript,
-// поэтому загружается после proxy.js (нужен vpnContainerCookieStoreId).
+// чтобы ICE-кандидаты не слили реальный IP в обход Tor-прокси.
+// Использует webNavigation + executeScript, поэтому загружается
+// после proxy.js (нужен vpnContainerCookieStoreId).
 //
-// История (2026-09-12):
+// Как пришли к текущему подходу:
 // 1) Изначально код блокировки выполнялся прямо в теле content
 //    script'а через Object.defineProperty(window, ...). В Firefox
 //    это не работало: content script и страница видят РАЗНЫЕ
