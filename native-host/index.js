@@ -23,16 +23,46 @@ const CONTROL_PORT = 9051;
 const CONTROL_HOST = '127.0.0.1';
 const LOG_PATH = path.join(__dirname, 'host.log');
 
-// Cookie может лежать в разных местах в зависимости от того, как
-// поставлен Tor: через инсталлятор TabVPN (свой bundled Tor, без
-// Homebrew) или через brew (Intel-путь /usr/local, Apple
-// Silicon-путь /opt/homebrew). Проверяем по порядку, берём первый
-// существующий.
-const COOKIE_CANDIDATES = [
-  path.join(process.env.HOME || '', 'Library', 'Application Support', 'TabVPN', 'tor-data', 'control_auth_cookie'),
-  '/opt/homebrew/var/lib/tor/control_auth_cookie',
-  '/usr/local/var/lib/tor/control_auth_cookie',
-];
+// Cookie может лежать в разных местах в зависимости от ОС и от
+// того, как поставлен Tor. См. PLAN-CROSSPLATFORM.md (Задача 1) —
+// этот блок реализует её.
+//
+// - macOS: через инсталлятор TabVPN (свой bundled Tor, без
+//   Homebrew) или через brew (Intel-путь /usr/local, Apple
+//   Silicon-путь /opt/homebrew).
+// - Windows: инсталлятор TabVPN кладёт свой Tor в
+//   %LOCALAPPDATA%\TabVPN\tor-data (см. Задачи 6, 9 плана).
+// - Linux: инсталлятор TabVPN кладёт свой Tor в
+//   ~/.local/share/TabVPN/tor-data (XDG data dir), плюс запасной
+//   путь системного пакета tor (Debian/Ubuntu и др.), если
+//   пользователь такой уже установил сам.
+//
+// В каждой ветке проверяем кандидатов по порядку, берём первый
+// существующий (resolveCookiePath ниже).
+function buildCookieCandidates() {
+  if (process.platform === 'win32') {
+    const localAppData = process.env.LOCALAPPDATA || '';
+    return [
+      path.join(localAppData, 'TabVPN', 'tor-data', 'control_auth_cookie'),
+    ];
+  }
+  if (process.platform === 'linux') {
+    const home = process.env.HOME || '';
+    return [
+      path.join(home, '.local', 'share', 'TabVPN', 'tor-data', 'control_auth_cookie'),
+      '/var/lib/tor/control_auth_cookie',
+    ];
+  }
+  // По умолчанию — macOS (darwin), поведение как было раньше.
+  const home = process.env.HOME || '';
+  return [
+    path.join(home, 'Library', 'Application Support', 'TabVPN', 'tor-data', 'control_auth_cookie'),
+    '/opt/homebrew/var/lib/tor/control_auth_cookie',
+    '/usr/local/var/lib/tor/control_auth_cookie',
+  ];
+}
+
+const COOKIE_CANDIDATES = buildCookieCandidates();
 
 function resolveCookiePath() {
   for (const p of COOKIE_CANDIDATES) {

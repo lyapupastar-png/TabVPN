@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="ocean-err" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E57373"/>
+      <stop offset="100%" stop-color="#B71C1C"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="60" fill="url(#ocean-err)"/>
+  <g fill="#FFEBEE">
+    <path d="M40 30 Q55 20 70 28 Q78 34 72 44 Q60 50 50 46 Q38 42 40 30 Z"/>
+    <path d="M75 55 Q92 50 98 62 Q96 74 84 76 Q72 74 72 64 Q72 58 75 55 Z"/>
+    <path d="M30 70 Q42 64 52 72 Q54 82 44 88 Q32 88 28 80 Q26 74 30 70 Z"/>
+    <path d="M60 90 Q70 86 78 94 Q76 102 66 102 Q58 100 60 90 Z"/>
+  </g>
+  <circle cx="64" cy="64" r="60" fill="none" stroke="#7A0C0C" stroke-width="3"/>
+</svg>
