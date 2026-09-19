@@ -10,27 +10,3 @@ native-host/tor-data/
 dist/
 build/
 installer/windows/Output/
-
-# Рабочие заметки для агента/разработчика — не часть публичного
-# продукта, в репозиторий не идут. Файлы остаются локально на диске.
-STATUS.md
-NEXT_TASK.md
-PLAN.md
-PLAN-CROSSPLATFORM.md
-ARCHIVE_*.md
-
-# Устаревшие/разовые локальные архивы — не часть продукта.
-extension.zip
-
-# Временная папка со сшитыми артефактами релиза перед ручной
-# загрузкой в GitHub Releases — не часть кода, не коммитить.
-release-*/
-
-# Dev/test-скрипты и файлы, специфичные для машины разработчика —
-# не нужны никому, кроме автора. host.js — неиспользуемый дубликат
-# (реальный native-host — index.js, см. manifest/com.tabvpn.host.json).
-native-host/host.js
-native-host/test-harness.js
-native-host/test-manual.js
-native-host/test-quick-newcircuit.js
-native-host/manifest/com.tabvpn.host.json
