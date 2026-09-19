@@ -5,7 +5,7 @@ node_modules/
 # Локальные данные Tor — ключи, cookie, кэш консенсуса. Никогда не коммитить.
 native-host/tor-data/
 
-# Собранные артефакты — их кладём в GitHub Releases, а не в git
+# Собранные артефакты — в GitHub Releases
 *.xpi
 dist/
 build/
